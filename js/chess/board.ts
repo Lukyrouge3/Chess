@@ -2,71 +2,91 @@
 /*
  * Représente un plateau d'échecs
  */
+import P5 from "p5";
+
 const initalFenString =
-  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 export enum PiecesEnum {
-  PAWN = "p",
-  ROOK = "r",
-  KNIGHT = "n",
-  BISHOP = "b",
-  QUEEN = "q",
-  KING = "k"
+    PAWN = "p",
+    ROOK = "r",
+    KNIGHT = "n",
+    BISHOP = "b",
+    QUEEN = "q",
+    KING = "k"
 }
 
 export enum PieceColorEnum {
-  WHITE = 0,
-  BLACK = 1
+    WHITE = "rgb(220, 220, 220)",
+    BLACK = "rgb(50, 50, 50)"
 }
 
 export class Piece {
-  color: number;
-  type: string;
+    color: string;
+    type: string;
+    x: number;
+    y: number;
+    p5: P5;
 
-  constructor(_color, _type) {
-    this.color = _color;
-    this.type = _type;
-  }
+    constructor(_p5, _x, _y, _color, _type) {
+        this.x = _x;
+        this.y = _y;
+        this.p5 = _p5;
+        this.color = _color;
+        this.type = _type;
+    }
 
-  draw(p, x: number, y: number) {
-    p.color(this.color);
-    p.ellipse(x, y, 10, 10);
-  }
+    draw(model) {
+        this.p5.fill(this.color);
+
+        this.p5.push();
+        this.p5.scale(.8);
+        this.p5.translate(this.x * 100, this.y * 100)
+        this.p5.model(model);
+        this.p5.pop();
+    }
 }
 
 export class Board {
-  boardFen: string;
-  playerToPlay: string;
-  board: Piece[];
-  possibleRocks: string[];
+    boardFen: string;
+    playerToPlay: string;
+    board: Piece[];
+    possibleRocks: string[];
+    p5: P5;
+    pawnModel: P5.Geometry;
 
-  constructor() {
-    this.boardFen = initalFenString;
-  }
-
-  draw(p) {
-    this.board = Board.boardFromFen(this.boardFen);
-    for (let i = 0; i < this.board.length; i++) {
-      let y = Math.floor(i / 8);
-      let x = i - y;
-      this.board[i].draw(p, x, y);
+    constructor(_p5: P5, pawnModel) {
+        this.p5 = _p5;
+        this.pawnModel = pawnModel;
+        this.boardFen = initalFenString;
     }
-  }
 
-  static boardFromFen(fen: string): Piece[] {
-    let board: Piece[] = [];
-    let splitedFen = fen.split(" ");
-    for (let i = 0; i < splitedFen[0].length; i++) {
-      let char = splitedFen[0][i];
-      let color =
-        char.toUpperCase() === char
-          ? PieceColorEnum.WHITE
-          : PieceColorEnum.BLACK;
-      if (isNaN(parseInt(char))) {
-        for (let j = 0; j < parseInt(char); j++) board.push(null);
-        board.push(new Piece(color, char.toLowerCase()));
-      }
+    draw() {
+        this.board = this.boardFromFen();
+        this.p5.noStroke();
+        for (let i = 0; i < this.board.length; i++) {
+            if (this.board[i]) this.board[i].draw(this.pawnModel);
+        }
     }
-    return null;
-  }
+
+    boardFromFen(): Piece[] {
+        let board: Piece[] = [];
+        let splitedFen = this.boardFen.split(" ")[0].split("/");
+        for (let i = 0; i < splitedFen.length; i++) {
+            for (let j = 0; j < splitedFen[i].length; j++) {
+                let char = splitedFen[i][j];
+                let color = char.toUpperCase() === char
+                    ? PieceColorEnum.WHITE
+                    : PieceColorEnum.BLACK;
+                if (Board.isNumeric(char)) {
+                    for (let j = 0; j < parseInt(char); j++) board.push(null);
+                } else board.push(new Piece(this.p5, j, i, color, char.toLowerCase()));
+            }
+        }
+        return board;
+    }
+
+    static isNumeric(s: any) {
+        return !isNaN(s - parseFloat(s));
+    }
 }

@@ -1,2 +1,0 @@
-# Chess
-Created with CodeSandbox
